@@ -1,8 +1,9 @@
 # flutter_retro_audioplayer
 
-An audio player that mimics a retro tape
+An audio player that mimics a retro tape in Flutter.
 
-![The audio player in action](https://www.flutterclutter.dev/wp-content/uploads/2020/08/flutter-retro-audio-player-tape.png)
+![The audio player](https://www.flutterclutter.dev/wp-content/uploads/2020/08/flutter-retro-audio-player-tape.png)
+![The audio player in action](https://www.flutterclutter.dev/wp-content/uploads/2020/08/flutter-retro-audio-player-tape-animation.gif)
 
 # Article
 
