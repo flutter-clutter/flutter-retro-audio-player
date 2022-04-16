@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_retro_audioplayer/tape_button.dart';
-
 import 'package:flutter_ffmpeg/flutter_ffmpeg.dart';
+import 'package:flutter_ffmpeg/media_information.dart';
+import 'package:flutter_retro_audioplayer/tape_button.dart';
 
 import 'tape_painter.dart';
 
@@ -17,11 +15,12 @@ class Tape extends StatefulWidget {
 }
 
 class _TapeState extends State<Tape> with SingleTickerProviderStateMixin {
-  AnimationController _controller;
+  late AnimationController _controller;
+  late AudioPlayer _audioPlayer;
+
   TapeStatus _status = TapeStatus.initial;
-  AudioPlayer _audioPlayer;
-  String _url;
-  String _title;
+  String? _url;
+  String? _title;
   double _currentPosition = 0.0;
 
   @override
@@ -30,12 +29,10 @@ class _TapeState extends State<Tape> with SingleTickerProviderStateMixin {
 
     _controller = new AnimationController(
       duration: const Duration(milliseconds: 2000),
-      vsync: this
+      vsync: this,
     );
 
-    Tween<double> tween = Tween<double>(
-      begin: 0.0, end: 1.0
-    );
+    Tween<double> tween = Tween<double>(begin: 0.0, end: 1.0);
 
     tween.animate(_controller);
     _audioPlayer = AudioPlayer();
@@ -56,12 +53,12 @@ class _TapeState extends State<Tape> with SingleTickerProviderStateMixin {
           width: 300,
           height: 200,
           child: AnimatedBuilder(
-            builder: (BuildContext context, Widget child) {
+            builder: (BuildContext context, Widget? child) {
               return CustomPaint(
                 painter: TapePainter(
                   rotationValue: _controller.value,
-                  title: _title,
-                  progress: _currentPosition
+                  title: _title ?? '',
+                  progress: _currentPosition,
                 ),
               );
             },
@@ -72,13 +69,29 @@ class _TapeState extends State<Tape> with SingleTickerProviderStateMixin {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TapeButton(icon: Icons.play_arrow, onTap: play, isTapped: _status == TapeStatus.playing),
+            TapeButton(
+              icon: Icons.play_arrow,
+              onTap: play,
+              isTapped: _status == TapeStatus.playing,
+            ),
             SizedBox(width: 8),
-            TapeButton(icon: Icons.pause, onTap: pause, isTapped: _status == TapeStatus.pausing),
+            TapeButton(
+              icon: Icons.pause,
+              onTap: pause,
+              isTapped: _status == TapeStatus.pausing,
+            ),
             SizedBox(width: 8),
-            TapeButton(icon: Icons.stop, onTap: stop, isTapped: _status == TapeStatus.stopping),
+            TapeButton(
+              icon: Icons.stop,
+              onTap: stop,
+              isTapped: _status == TapeStatus.stopping,
+            ),
             SizedBox(width: 8),
-            TapeButton(icon: Icons.eject, onTap: choose, isTapped: _status == TapeStatus.choosing),
+            TapeButton(
+              icon: Icons.eject,
+              onTap: choose,
+              isTapped: _status == TapeStatus.choosing,
+            ),
           ],
         )
       ],
@@ -111,7 +124,7 @@ class _TapeState extends State<Tape> with SingleTickerProviderStateMixin {
       _status = TapeStatus.playing;
     });
     _controller.repeat();
-    _audioPlayer.play(_url);
+    _audioPlayer.play(_url!);
   }
 
   choose() async {
@@ -121,36 +134,44 @@ class _TapeState extends State<Tape> with SingleTickerProviderStateMixin {
       _status = TapeStatus.choosing;
     });
 
-    File file = await FilePicker.getFile(
-      type: FileType.audio
-    );
+    FilePickerResult? result =
+        await FilePicker.platform.pickFiles(type: FileType.audio);
 
-    _url = file.path;
-    _audioPlayer.setUrl(_url);
-
-    final FlutterFFprobe _flutterFFprobe = new FlutterFFprobe();
-    Map<dynamic, dynamic> mediaInfo = await _flutterFFprobe.getMediaInformation(_url);
-
-    int duration = mediaInfo['duration'];
-
-    file.uri.toString().split('/').last;
-
-    String title = file.uri.toString().split('/').last;
-    String artist;
-
-    if (mediaInfo['metadata'] != null) {
-      title = mediaInfo['metadata']['title'];
-      artist = mediaInfo['metadata']['artist'];
+    if (result == null) {
+      return;
     }
 
-    String completeTitle = artist == null ? title : "$artist - $title";
+    PlatformFile file = result.files.first;
+
+    _url = file.path;
+    _audioPlayer.setUrl(_url!);
+
+    final FlutterFFprobe _flutterFFprobe = new FlutterFFprobe();
+    MediaInformation mediaInfo =
+        await _flutterFFprobe.getMediaInformation(_url!);
+
+    Map<dynamic, dynamic> properties = mediaInfo.getMediaProperties()!;
+
+    int? duration = properties['duration'];
+
+    file.path.toString().split('/').last;
+
+    String? title = file.path.toString().split('/').last;
+    String? artist;
+
+    if (properties['metadata'] != null) {
+      title = properties['metadata']['title'];
+      artist = properties['metadata']['artist'];
+    }
+
+    String? completeTitle = artist == null ? title : "$artist - $title";
 
     _audioPlayer.onPlayerCompletion.listen((event) {
       stop();
     });
 
     _audioPlayer.onAudioPositionChanged.listen((event) {
-      _currentPosition = event.inMilliseconds / duration;
+      _currentPosition = event.inMilliseconds / duration!;
     });
 
     setState(() {
