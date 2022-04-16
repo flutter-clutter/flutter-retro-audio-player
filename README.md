@@ -6,7 +6,7 @@ An audio player that mimics a retro tape in Flutter.
   <img height="400" src="https://www.flutterclutter.dev/images/posts/2020-08-28-audio-player-in-retro-design/flutter-retro-audio-player-tape.webp">
 </p>
 
-A basic clone of the popular game Fruit Ninja
+The audio player in action:
 
 <p align="center">
   <img height="400" src="https://www.flutterclutter.dev/images/wp-content/uploads/2020/08/flutter-retro-audio-player-tape-animation.gif">
